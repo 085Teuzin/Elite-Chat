@@ -8,206 +8,202 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        :root { --orange-main: #f97316; }
+        :root { --main-color: #f97316; --main-glow: rgba(249, 115, 22, 0.4); }
         body { background-color: #0b0f1a; color: #e2e8f0; overflow: hidden; height: 100vh; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(249, 115, 22, 0.1); }
-        .orange-glow-focus:focus { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); border-color: var(--orange-main); }
-        .msg-shadow { box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.3); }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .dynamic-border { border: 1px solid var(--main-color) !important; }
+        .dynamic-text { color: var(--main-color) !important; }
+        .dynamic-bg { background-color: var(--main-color) !important; }
+        .dynamic-shadow { box-shadow: 0 0 15px var(--main-glow); }
+        #chat-messages { word-wrap: break-word; overflow-wrap: break-word; }
+        .msg-bubble { max-width: 85%; word-break: break-word; }
         #chat-messages::-webkit-scrollbar { width: 4px; }
-        #chat-messages::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        #chat-messages::-webkit-scrollbar-thumb:hover { background: var(--orange-main); }
-        .typing-dot { width: 4px; height: 4px; background: #94a3b8; border-radius: 50%; animation: blink 1.4s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        #chat-messages::-webkit-scrollbar-thumb { background: var(--main-color); border-radius: 10px; }
+        .modal-bg { background: rgba(0,0,0,0.8); transition: all 0.3s; }
     </style>
 </head>
-<body class="flex flex-col font-sans italic-none">
+<body class="flex flex-col font-sans">
 
-    <div class="flex justify-between items-center p-4 bg-slate-900/50 border-b border-orange-500/20">
+    <div class="flex justify-between items-center p-4 bg-slate-900/80 border-b border-white/5">
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
-            <span class="font-black tracking-tighter text-orange-500 uppercase">P2P Secure Chat</span>
+            <div class="w-3 h-3 rounded-full dynamic-bg animate-pulse"></div>
+            <span class="font-black tracking-tighter dynamic-text uppercase">P2P Secure Chat</span>
         </div>
-        <button id="fullscreen-btn" class="bg-slate-800 hover:bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90">📺</button>
+        <div class="flex gap-3">
+            <button onclick="toggleModal('config-modal')" class="hover:scale-110 transition">⚙️</button>
+            <button id="fullscreen-btn" class="bg-slate-800 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs dynamic-border transition active:scale-90">📺</button>
+        </div>
     </div>
 
-    <main class="flex-grow flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 overflow-hidden relative">
+    <main class="flex-grow flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 overflow-hidden">
         
-        <div id="setup-screen" class="w-full space-y-5 glass p-8 rounded-3xl animate__animated animate__fadeInUp msg-shadow">
-            <div class="text-center mb-6">
-                <p class="text-gray-400 text-sm">Conexão direta e criptografada via WebRTC</p>
+        <div id="setup-screen" class="w-full space-y-4 glass p-8 rounded-3xl animate__animated animate__fadeInUp dynamic-shadow">
+            <div class="space-y-3">
+                <input type="text" id="username" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 focus:outline-none dynamic-border transition-all text-white" placeholder="Seu apelido">
+                <input type="text" id="room-name" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 focus:outline-none dynamic-border transition-all text-white" placeholder="Nome da sala">
+                <input type="password" id="room-pass" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 focus:outline-none dynamic-border transition-all text-white" placeholder="Senha da sala (Opcional)">
             </div>
-            <div class="space-y-4">
-                <div class="relative">
-                    <input type="text" id="username" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 pl-12 focus:outline-none orange-glow-focus transition-all text-white" placeholder="Seu apelido">
-                    <span class="absolute left-4 top-4 opacity-40">👤</span>
-                </div>
-                <div class="relative">
-                    <input type="text" id="room-name" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 pl-12 focus:outline-none orange-glow-focus transition-all text-white" placeholder="Nome da sala (ID)">
-                    <span class="absolute left-4 top-4 opacity-40">🔑</span>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 pt-4">
-                <button onclick="initPeer(true)" class="bg-orange-600 hover:bg-orange-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-orange-900/20 active:scale-95">CRIAR</button>
-                <button onclick="initPeer(false)" class="bg-slate-800 hover:bg-slate-700 text-orange-500 font-black py-4 rounded-2xl border border-orange-500/30 transition-all active:scale-95">ENTRAR</button>
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <button onclick="initPeer(true)" class="dynamic-bg text-white font-black py-4 rounded-2xl dynamic-border transition-all active:scale-95">CRIAR</button>
+                <button onclick="initPeer(false)" class="bg-transparent dynamic-text font-black py-4 rounded-2xl dynamic-border transition-all active:scale-95">ENTRAR</button>
             </div>
         </div>
 
-        <div id="chat-screen" class="hidden w-full flex-col h-full max-h-[85vh] glass rounded-3xl overflow-hidden animate__animated animate__zoomIn">
-            <div class="bg-slate-800/80 p-4 border-b border-orange-500/20 flex justify-between items-center">
-                <div>
-                    <p id="display-room" class="font-bold text-orange-500 text-xs uppercase tracking-widest"></p>
-                    <p id="peer-count" class="text-[10px] text-gray-500">Aguardando conexões...</p>
-                </div>
-                <button onclick="clearChat()" class="text-[10px] bg-slate-700 px-2 py-1 rounded hover:bg-red-900 transition-colors">LIMPAR</button>
+        <div id="chat-screen" class="hidden w-full flex-col h-full max-h-[85vh] glass rounded-3xl overflow-hidden animate__animated animate__zoomIn dynamic-shadow">
+            <div class="bg-slate-800/80 p-4 border-b border-white/5 flex justify-between items-center">
+                <p id="display-room" class="font-bold dynamic-text text-xs uppercase tracking-widest"></p>
+                <button onclick="clearChat()" class="text-[10px] bg-slate-700 px-2 py-1 rounded dynamic-border">LIMPAR</button>
             </div>
             
-            <div id="chat-messages" class="flex-grow p-4 overflow-y-auto space-y-4 flex flex-col scroll-smooth"></div>
+            <div id="chat-messages" class="flex-grow p-4 overflow-y-auto space-y-4 flex flex-col"></div>
 
-            <div id="typing-indicator" class="px-4 py-1 text-[10px] text-gray-500 italic hidden">Alguém está digitando...</div>
-
-            <div class="p-4 bg-slate-900/80 border-t border-slate-800">
+            <div class="p-4 bg-slate-900/80 border-t border-white/5 space-y-2">
                 <div class="flex gap-2">
-                    <input type="text" id="message-input" autocomplete="off" class="flex-grow bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 focus:outline-none focus:border-orange-500 transition-all text-sm" placeholder="Escreva aqui...">
-                    <button onclick="sendMessage()" class="bg-orange-600 hover:bg-orange-500 w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 shadow-lg shadow-orange-900/40">
-                        <svg viewBox="0 0 24 24" class="w-6 h-6 fill-white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                    <label class="cursor-pointer bg-slate-800 w-12 h-12 rounded-2xl flex items-center justify-center dynamic-border hover:bg-slate-700 transition">
+                        <span>📎</span>
+                        <input type="file" id="file-input" class="hidden" onchange="sendFile(this)">
+                    </label>
+                    <input type="text" id="message-input" autocomplete="off" class="flex-grow bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 focus:outline-none dynamic-border transition-all text-sm" placeholder="Mensagem...">
+                    <button onclick="sendMessage()" class="dynamic-bg w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 dynamic-border">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5 fill-white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
                     </button>
                 </div>
             </div>
         </div>
-
     </main>
+
+    <div id="config-modal" class="fixed inset-0 modal-bg hidden z-50 flex items-center justify-center p-6">
+        <div class="bg-slate-800 w-full max-w-xs rounded-3xl p-6 space-y-6 dynamic-border">
+            <h3 class="font-bold text-center">Configurações</h3>
+            <div class="space-y-3">
+                <p class="text-xs text-gray-400">Cor do Tema:</p>
+                <div class="flex justify-around">
+                    <button onclick="setTheme('#f97316')" class="w-8 h-8 rounded-full bg-orange-500 border-2 border-white"></button>
+                    <button onclick="setTheme('#22c55e')" class="w-8 h-8 rounded-full bg-green-500"></button>
+                    <button onclick="setTheme('#ec4899')" class="w-8 h-8 rounded-full bg-pink-500"></button>
+                    <button onclick="setTheme('#a855f7')" class="w-8 h-8 rounded-full bg-purple-500"></button>
+                </div>
+            </div>
+            <button onclick="clearData()" class="w-full py-3 bg-red-600/20 text-red-500 border border-red-600/50 rounded-xl font-bold text-sm">Limpar Dados</button>
+            <button onclick="toggleModal('config-modal')" class="w-full py-2 bg-slate-700 rounded-xl text-xs">Fechar</button>
+        </div>
+    </div>
 
     <footer class="text-center mt-5 text-gray-500 text-sm">
         Made By: <a href="https://instagram.com/085_Teuzinnn" target="_blank" class="text-blue-400 hover:text-blue-300 font-semibold transition duration-200">@085_Teuzinnn</a>
     </footer>
 
-    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
-
     <script>
-        let peer = null;
-        let connections = [];
-        let myNick = "";
-        const setupScreen = document.getElementById('setup-screen');
-        const chatScreen = document.getElementById('chat-screen');
-        const fsBtn = document.getElementById('fullscreen-btn');
-        const messagesContainer = document.getElementById('chat-messages');
-        const audio = document.getElementById('notif-sound');
+        let peer = null, connections = [], myNick = "", roomPass = "";
+        const msgContainer = document.getElementById('chat-messages');
 
-        document.getElementById('username').value = localStorage.getItem('p2p_nick') || '';
+        window.onload = () => {
+            document.getElementById('username').value = localStorage.getItem('p2p_nick') || '';
+            document.getElementById('room-name').value = localStorage.getItem('p2p_room') || '';
+            document.getElementById('room-pass').value = localStorage.getItem('p2p_pass') || '';
+            const savedColor = localStorage.getItem('p2p_color');
+            if(savedColor) setTheme(savedColor);
+        };
 
-        fsBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-                fsBtn.style.display = 'none';
-            }
-        });
+        function setTheme(color) {
+            document.documentElement.style.setProperty('--main-color', color);
+            document.documentElement.style.setProperty('--main-glow', color + '66');
+            localStorage.setItem('p2p_color', color);
+        }
 
-        function appendMessage(name, text, side, system = false) {
+        function toggleModal(id) {
+            document.getElementById(id).classList.toggle('hidden');
+        }
+
+        function clearData() {
+            localStorage.clear();
+            alert("Dados limpos! Recarregando...");
+            location.reload();
+        }
+
+        function appendMessage(name, content, side, type = 'text') {
             const div = document.createElement('div');
-            if(system) {
-                div.className = "self-center text-[10px] text-gray-600 uppercase tracking-tighter my-2";
-                div.innerText = text;
-            } else {
-                div.className = `max-w-[85%] p-3 rounded-2xl animate__animated animate__fadeInUp animate__faster msg-shadow ${side === 'self' ? 'bg-gradient-to-br from-orange-500 to-orange-700 self-end rounded-tr-none text-white' : 'bg-slate-800 self-start rounded-tl-none text-gray-200'}`;
-                div.innerHTML = `<p class="text-[9px] font-black opacity-60 uppercase mb-1">${name}</p><p class="text-sm leading-relaxed">${text}</p>`;
-                if(side === 'other') audio.play().catch(()=>{});
+            div.className = `msg-bubble p-3 rounded-2xl animate__animated animate__fadeInUp animate__faster mb-4 ${side === 'self' ? 'dynamic-bg self-end rounded-tr-none text-white' : 'bg-slate-800 self-start rounded-tl-none text-gray-200'} dynamic-border`;
+            
+            let inner = `<p class="text-[9px] font-black opacity-60 uppercase mb-1">${name || 'Sistema'}</p>`;
+            
+            if(type === 'text') inner += `<p class="text-sm leading-relaxed">${content}</p>`;
+            else if(type === 'file') {
+                const isImg = content.type.startsWith('image/');
+                inner += isImg ? `<img src="${content.data}" class="rounded-lg mb-2 max-h-48">` : `<div class="bg-black/20 p-2 rounded mb-2 text-xs italic">📄 ${content.name}</div>`;
+                inner += `<a href="${content.data}" download="${content.name}" class="text-[10px] bg-white/20 px-2 py-1 rounded block text-center">Baixar</a>`;
             }
-            messagesContainer.appendChild(div);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            div.innerHTML = inner;
+            msgContainer.appendChild(div);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
         }
 
         function initPeer(isHost) {
             myNick = document.getElementById('username').value.trim();
             const room = document.getElementById('room-name').value.trim().toLowerCase();
+            roomPass = document.getElementById('room-pass').value.trim();
 
-            if (!myNick || !room) return alert("Ei! Digite seu nick e o nome da sala.");
+            if (!myNick || !room) return alert("Preencha Nick e Sala!");
+            
             localStorage.setItem('p2p_nick', myNick);
+            localStorage.setItem('p2p_room', room);
+            localStorage.setItem('p2p_pass', roomPass);
 
-            peer = new Peer(isHost ? room : undefined, {
-                debug: 1
-            });
+            peer = new Peer(isHost ? room : undefined);
 
             peer.on('open', (id) => {
-                setupScreen.classList.add('hidden');
-                chatScreen.classList.remove('hidden');
-                chatScreen.classList.add('flex');
-                document.getElementById('display-room').innerText = `SALA: ${room}`;
-                
-                if (!isHost) {
-                    const conn = peer.connect(room);
-                    handleConnection(conn);
-                }
-                appendMessage(null, "🔐 Conexão ponta-a-ponta ativada", null, true);
+                document.getElementById('setup-screen').classList.add('hidden');
+                document.getElementById('chat-screen').classList.replace('hidden', 'flex');
+                document.getElementById('display-room').innerText = room;
+                if (!isHost) handleConnection(peer.connect(room));
             });
 
-            peer.on('connection', (conn) => {
-                handleConnection(conn);
-                if(isHost) {
-                    setTimeout(() => {
-                        connections.forEach(c => {
-                            if(c.peer !== conn.peer) c.send({type: 'system', msg: `${conn.metadata.nick} entrou no chat`});
-                        });
-                    }, 500);
-                }
-            });
-
-            peer.on('error', (err) => {
-                alert("Erro: Sala pode estar ocupada ou conexão falhou.");
-                console.error(err);
-            });
+            peer.on('connection', handleConnection);
         }
 
         function handleConnection(conn) {
             conn.on('open', () => {
-                conn.metadata = { nick: myNick };
-                connections.push(conn);
-                updatePeerCount();
-                appendMessage(null, `Conectado a um par`, null, true);
-
+                conn.send({ type: 'auth', pass: roomPass });
                 conn.on('data', (data) => {
-                    if(data.type === 'chat') {
-                        appendMessage(data.user, data.msg, "other");
-                    } else if(data.type === 'system') {
-                        appendMessage(null, data.msg, null, true);
-                    }
+                    if(data.type === 'auth-fail') { alert("Senha incorreta!"); location.reload(); }
+                    if(data.type === 'auth' && data.pass !== roomPass) { conn.send({type: 'auth-fail'}); conn.close(); }
+                    if(data.type === 'chat') appendMessage(data.user, data.msg, "other");
+                    if(data.type === 'file') appendMessage(data.user, data.file, "other", "file");
                 });
-
-                conn.on('close', () => {
-                    connections = connections.filter(c => c.peer !== conn.peer);
-                    updatePeerCount();
-                    appendMessage(null, "Alguém saiu do chat", null, true);
-                });
+                connections.push(conn);
             });
-        }
-
-        function updatePeerCount() {
-            const count = connections.length;
-            document.getElementById('peer-count').innerText = count === 0 ? "Aguardando amigos..." : `${count} amigo(s) conectado(s)`;
         }
 
         function sendMessage() {
             const input = document.getElementById('message-input');
-            const msg = input.value.trim();
-
-            if (msg && connections.length > 0) {
-                connections.forEach(conn => {
-                    if(conn.open) conn.send({ type: 'chat', user: myNick, msg: msg });
-                });
+            if (input.value.trim()) {
+                const msg = input.value;
+                connections.forEach(c => c.send({ type: 'chat', user: myNick, msg }));
                 appendMessage("Você", msg, "self");
                 input.value = "";
-            } else if (connections.length === 0) {
-                alert("Ninguém na sala ainda!");
             }
         }
 
-        function clearChat() {
-            messagesContainer.innerHTML = "";
-            appendMessage(null, "Histórico limpo localmente", null, true);
+        function sendFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) return alert("Máximo 5MB!");
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                const fileData = { data: reader.result, name: file.name, type: file.type };
+                connections.forEach(c => c.send({ type: 'file', user: myNick, file: fileData }));
+                appendMessage("Você", fileData, "self", "file");
+            };
+            reader.readAsDataURL(file);
         }
 
-        document.getElementById('message-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
+        document.getElementById('message-input').onkeypress = (e) => e.key === 'Enter' && sendMessage();
+        document.getElementById('fullscreen-btn').onclick = () => {
+            document.documentElement.requestFullscreen();
+            document.getElementById('fullscreen-btn').style.display = 'none';
+        };
     </script>
 </body>
 </html>
