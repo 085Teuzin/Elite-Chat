@@ -7,203 +7,234 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --main-color: #f97316; --main-glow: rgba(249, 115, 22, 0.4); }
-        body { background-color: #0b0f1a; color: #e2e8f0; overflow: hidden; height: 100vh; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .dynamic-border { border: 1px solid var(--main-color) !important; }
-        .dynamic-text { color: var(--main-color) !important; }
-        .dynamic-bg { background-color: var(--main-color) !important; }
-        .dynamic-shadow { box-shadow: 0 0 15px var(--main-glow); }
-        #chat-messages { word-wrap: break-word; overflow-wrap: break-word; }
-        .msg-bubble { max-width: 85%; word-break: break-word; }
-        #chat-messages::-webkit-scrollbar { width: 4px; }
-        #chat-messages::-webkit-scrollbar-thumb { background: var(--main-color); border-radius: 10px; }
-        .modal-bg { background: rgba(0,0,0,0.8); transition: all 0.3s; }
+        :root { --main: #f97316; --glow: rgba(249, 115, 22, 0.4); }
+        body { background-color: #05070a; color: #f8fafc; overflow: hidden; height: 100vh; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .theme-border { border: 1px solid var(--main) !important; }
+        .theme-text { color: var(--main) !important; }
+        .theme-bg { background-color: var(--main) !important; }
+        .theme-shadow { box-shadow: 0 0 20px var(--glow); }
+        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        #chat-messages { word-wrap: break-word; overflow-wrap: break-word; scroll-behavior: smooth; }
+        .btn-press:active { transform: scale(0.95); }
+        main { height: calc(100vh - 120px); }
     </style>
 </head>
-<body class="flex flex-col font-sans">
+<body class="p-4">
 
-    <div class="flex justify-between items-center p-4 bg-slate-900/80 border-b border-white/5">
-        <div class="flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full dynamic-bg animate-pulse"></div>
-            <span class="font-black tracking-tighter dynamic-text uppercase">P2P Secure Chat</span>
+    <div id="lobby-ui" class="w-full max-w-2xl flex flex-col items-center animate__animated animate__fadeIn">
+        <div class="w-full flex justify-end gap-2 mb-4">
+            <button onclick="openSettings()" class="p-2 glass-panel rounded-full btn-press theme-border text-sm">⚙️</button>
+            <button id="fs-btn" class="p-2 glass-panel rounded-full btn-press theme-border text-sm">📺</button>
         </div>
-        <div class="flex gap-3">
-            <button onclick="toggleModal('config-modal')" class="hover:scale-110 transition">⚙️</button>
-            <button id="fullscreen-btn" class="bg-slate-800 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs dynamic-border transition active:scale-90">📺</button>
+
+        <h1 class="text-4xl font-[900] theme-text uppercase tracking-tighter text-center">Chat P2P</h1>
+        <h2 class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-6 text-center italic">Use a mesma senha para conectar</h2>
+
+        <div id="lobby-box" class="w-full glass-panel p-6 rounded-[2rem] theme-shadow space-y-4">
+            <div class="space-y-4">
+                <input type="text" id="nick" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 focus:outline-none theme-border transition-all text-sm" placeholder="Seu apelido">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="room" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 focus:outline-none theme-border transition-all text-sm" placeholder="Nome da Sala">
+                    <input type="password" id="pass" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 focus:outline-none theme-border transition-all text-sm" placeholder="Senha">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="start(true)" class="theme-bg text-white font-black py-4 rounded-xl btn-press shadow-lg shadow-orange-900/20 text-xs">CRIAR SALA</button>
+                <button onclick="start(false)" class="bg-transparent theme-text font-black py-4 rounded-xl btn-press theme-border text-xs">ENTRAR</button>
+            </div>
         </div>
     </div>
 
-    <main class="flex-grow flex flex-col items-center justify-center w-full max-w-lg mx-auto p-4 overflow-hidden">
-        
-        <div id="setup-screen" class="w-full space-y-4 glass p-8 rounded-3xl animate__animated animate__fadeInUp dynamic-shadow">
-            <div class="space-y-3">
-                <input type="text" id="username" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 focus:outline-none dynamic-border transition-all text-white" placeholder="Seu apelido">
-                <input type="text" id="room-name" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 focus:outline-none dynamic-border transition-all text-white" placeholder="Nome da sala">
-                <input type="password" id="room-pass" class="w-full bg-slate-950/50 border border-slate-700 rounded-2xl p-4 focus:outline-none dynamic-border transition-all text-white" placeholder="Senha da sala (Opcional)">
+    <main id="chat-ui" class="hidden w-full max-w-2xl flex-col glass-panel rounded-[2rem] overflow-hidden animate__animated animate__zoomIn theme-shadow h-[80vh] md:h-[75vh]">
+        <div class="p-3 border-b border-white/5 flex justify-between items-center bg-black/30">
+            <div class="flex items-center gap-3">
+                <div id="status-ball" class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]"></div>
+                <div>
+                    <p id="partner-name" class="text-[10px] font-black uppercase tracking-widest theme-text">Aguardando...</p>
+                    <p id="conn-status" class="text-[8px] text-gray-500 uppercase font-bold tracking-tighter">Off-line</p>
+                </div>
             </div>
-            <div class="grid grid-cols-2 gap-4 pt-2">
-                <button onclick="initPeer(true)" class="dynamic-bg text-white font-black py-4 rounded-2xl dynamic-border transition-all active:scale-95">CRIAR</button>
-                <button onclick="initPeer(false)" class="bg-transparent dynamic-text font-black py-4 rounded-2xl dynamic-border transition-all active:scale-95">ENTRAR</button>
+            <div class="flex gap-2">
+                <button onclick="clearMessages()" class="text-[8px] font-bold theme-text px-2 py-1 border border-orange-500/20 rounded-md hover:bg-orange-500/10 transition">LIMPAR</button>
+                <button onclick="exitChat()" class="text-[8px] font-bold text-red-500 px-2 py-1 border border-red-500/20 rounded-md hover:bg-red-500/10 transition">SAIR</button>
             </div>
         </div>
 
-        <div id="chat-screen" class="hidden w-full flex-col h-full max-h-[85vh] glass rounded-3xl overflow-hidden animate__animated animate__zoomIn dynamic-shadow">
-            <div class="bg-slate-800/80 p-4 border-b border-white/5 flex justify-between items-center">
-                <p id="display-room" class="font-bold dynamic-text text-xs uppercase tracking-widest"></p>
-                <button onclick="clearChat()" class="text-[10px] bg-slate-700 px-2 py-1 rounded dynamic-border">LIMPAR</button>
-            </div>
-            
-            <div id="chat-messages" class="flex-grow p-4 overflow-y-auto space-y-4 flex flex-col"></div>
+        <div id="chat-messages" class="flex-grow p-4 overflow-y-auto flex flex-col gap-3"></div>
 
-            <div class="p-4 bg-slate-900/80 border-t border-white/5 space-y-2">
-                <div class="flex gap-2">
-                    <label class="cursor-pointer bg-slate-800 w-12 h-12 rounded-2xl flex items-center justify-center dynamic-border hover:bg-slate-700 transition">
-                        <span>📎</span>
-                        <input type="file" id="file-input" class="hidden" onchange="sendFile(this)">
-                    </label>
-                    <input type="text" id="message-input" autocomplete="off" class="flex-grow bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 focus:outline-none dynamic-border transition-all text-sm" placeholder="Mensagem...">
-                    <button onclick="sendMessage()" class="dynamic-bg w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 dynamic-border">
-                        <svg viewBox="0 0 24 24" class="w-5 h-5 fill-white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-                    </button>
-                </div>
+        <div class="p-3 bg-black/50 border-t border-white/5">
+            <div class="flex items-center gap-2">
+                <label class="cursor-pointer btn-press">
+                    <div class="w-10 h-10 glass-panel rounded-xl flex items-center justify-center theme-border text-md">📎</div>
+                    <input type="file" id="attach" class="hidden" onchange="handleFile(this)">
+                </label>
+                <input type="text" id="msg-input" class="flex-grow bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none theme-border transition-all text-xs" placeholder="Mensagem...">
+                <button onclick="send()" class="w-10 h-10 theme-bg rounded-xl flex items-center justify-center btn-press theme-border">
+                    <svg viewBox="0 0 24 24" class="w-4 h-4 fill-white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                </button>
             </div>
         </div>
     </main>
 
-    <div id="config-modal" class="fixed inset-0 modal-bg hidden z-50 flex items-center justify-center p-6">
-        <div class="bg-slate-800 w-full max-w-xs rounded-3xl p-6 space-y-6 dynamic-border">
-            <h3 class="font-bold text-center">Configurações</h3>
-            <div class="space-y-3">
-                <p class="text-xs text-gray-400">Cor do Tema:</p>
-                <div class="flex justify-around">
-                    <button onclick="setTheme('#f97316')" class="w-8 h-8 rounded-full bg-orange-500 border-2 border-white"></button>
-                    <button onclick="setTheme('#22c55e')" class="w-8 h-8 rounded-full bg-green-500"></button>
-                    <button onclick="setTheme('#ec4899')" class="w-8 h-8 rounded-full bg-pink-500"></button>
-                    <button onclick="setTheme('#a855f7')" class="w-8 h-8 rounded-full bg-purple-500"></button>
+    <div id="modal" class="fixed inset-0 bg-black/95 hidden z-50 flex items-center justify-center p-6 animate__animated animate__fadeIn">
+        <div class="glass-panel w-full max-w-xs rounded-[2rem] p-6 space-y-6 theme-border">
+            <h3 class="font-black text-center theme-text tracking-widest text-sm">AJUSTES</h3>
+            <div class="space-y-5">
+                <div class="flex justify-between p-1">
+                    <button onclick="setTheme('#f97316')" class="w-9 h-9 rounded-full bg-orange-500 border-2 border-white"></button>
+                    <button onclick="setTheme('#22c55e')" class="w-9 h-9 rounded-full bg-green-500"></button>
+                    <button onclick="setTheme('#ec4899')" class="w-9 h-9 rounded-full bg-pink-500"></button>
+                    <button onclick="setTheme('#a855f7')" class="w-9 h-9 rounded-full bg-purple-500"></button>
                 </div>
+                <button onclick="clearAll()" class="w-full py-3 bg-red-900/10 text-red-500 border border-red-900/30 rounded-xl font-bold text-[10px] btn-press">RESETA DADOS</button>
+                <button onclick="closeSettings()" class="w-full py-2.5 bg-white/5 rounded-xl text-[10px] font-black btn-press uppercase">Fechar</button>
             </div>
-            <button onclick="clearData()" class="w-full py-3 bg-red-600/20 text-red-500 border border-red-600/50 rounded-xl font-bold text-sm">Limpar Dados</button>
-            <button onclick="toggleModal('config-modal')" class="w-full py-2 bg-slate-700 rounded-xl text-xs">Fechar</button>
         </div>
     </div>
 
-    <footer class="text-center mt-5 text-gray-500 text-sm">
+    <footer class="text-center mt-auto py-4 text-gray-500 text-[10px]">
         Made By: <a href="https://instagram.com/085_Teuzinnn" target="_blank" class="text-blue-400 hover:text-blue-300 font-semibold transition duration-200">@085_Teuzinnn</a>
     </footer>
 
     <script>
-        let peer = null, connections = [], myNick = "", roomPass = "";
-        const msgContainer = document.getElementById('chat-messages');
+        let peer = null, connections = [], myNick = "", roomKey = "";
+        const $ = document.querySelector.bind(document);
 
         window.onload = () => {
-            document.getElementById('username').value = localStorage.getItem('p2p_nick') || '';
-            document.getElementById('room-name').value = localStorage.getItem('p2p_room') || '';
-            document.getElementById('room-pass').value = localStorage.getItem('p2p_pass') || '';
-            const savedColor = localStorage.getItem('p2p_color');
-            if(savedColor) setTheme(savedColor);
+            $('#nick').value = localStorage.getItem('tp_nick') || '';
+            $('#room').value = localStorage.getItem('tp_room') || '';
+            $('#pass').value = localStorage.getItem('tp_pass') || '';
+            const c = localStorage.getItem('tp_color');
+            if(c) setTheme(c);
         };
 
-        function setTheme(color) {
-            document.documentElement.style.setProperty('--main-color', color);
-            document.documentElement.style.setProperty('--main-glow', color + '66');
-            localStorage.setItem('p2p_color', color);
+        function setTheme(c) {
+            document.documentElement.style.setProperty('--main', c);
+            document.documentElement.style.setProperty('--glow', c + '66');
+            localStorage.setItem('tp_color', c);
         }
 
-        function toggleModal(id) {
-            document.getElementById(id).classList.toggle('hidden');
-        }
+        function openSettings() { $('#modal').classList.remove('hidden'); }
+        function closeSettings() { $('#modal').classList.add('hidden'); }
+        function clearAll() { localStorage.clear(); location.reload(); }
+        function clearMessages() { $('#chat-messages').innerHTML = ""; sysMsg("Limpo"); }
 
-        function clearData() {
-            localStorage.clear();
-            alert("Dados limpos! Recarregando...");
-            location.reload();
-        }
-
-        function appendMessage(name, content, side, type = 'text') {
-            const div = document.createElement('div');
-            div.className = `msg-bubble p-3 rounded-2xl animate__animated animate__fadeInUp animate__faster mb-4 ${side === 'self' ? 'dynamic-bg self-end rounded-tr-none text-white' : 'bg-slate-800 self-start rounded-tl-none text-gray-200'} dynamic-border`;
-            
-            let inner = `<p class="text-[9px] font-black opacity-60 uppercase mb-1">${name || 'Sistema'}</p>`;
-            
-            if(type === 'text') inner += `<p class="text-sm leading-relaxed">${content}</p>`;
-            else if(type === 'file') {
-                const isImg = content.type.startsWith('image/');
-                inner += isImg ? `<img src="${content.data}" class="rounded-lg mb-2 max-h-48">` : `<div class="bg-black/20 p-2 rounded mb-2 text-xs italic">📄 ${content.name}</div>`;
-                inner += `<a href="${content.data}" download="${content.name}" class="text-[10px] bg-white/20 px-2 py-1 rounded block text-center">Baixar</a>`;
-            }
-
-            div.innerHTML = inner;
-            msgContainer.appendChild(div);
-            msgContainer.scrollTop = msgContainer.scrollHeight;
-        }
-
-        function initPeer(isHost) {
-            myNick = document.getElementById('username').value.trim();
-            const room = document.getElementById('room-name').value.trim().toLowerCase();
-            roomPass = document.getElementById('room-pass').value.trim();
-
-            if (!myNick || !room) return alert("Preencha Nick e Sala!");
-            
-            localStorage.setItem('p2p_nick', myNick);
-            localStorage.setItem('p2p_room', room);
-            localStorage.setItem('p2p_pass', roomPass);
-
-            peer = new Peer(isHost ? room : undefined);
-
-            peer.on('open', (id) => {
-                document.getElementById('setup-screen').classList.add('hidden');
-                document.getElementById('chat-screen').classList.replace('hidden', 'flex');
-                document.getElementById('display-room').innerText = room;
-                if (!isHost) handleConnection(peer.connect(room));
+        function start(isHost) {
+            myNick = $('#nick').value.trim();
+            const r = $('#room').value.trim().toLowerCase();
+            roomKey = $('#pass').value.trim();
+            if(!myNick || !r) return alert("Nick e Sala vazios!");
+            localStorage.setItem('tp_nick', myNick);
+            localStorage.setItem('tp_room', r);
+            localStorage.setItem('tp_pass', roomKey);
+            peer = new Peer(isHost ? r : undefined);
+            peer.on('open', () => {
+                $('#lobby-ui').classList.add('hidden');
+                $('#chat-ui').classList.replace('hidden', 'flex');
+                updateStatus('offline');
+                if(!isHost) connectToPeer(r);
             });
-
-            peer.on('connection', handleConnection);
+            peer.on('connection', setupConn);
+            peer.on('error', () => alert("Erro de conexão."));
         }
 
-        function handleConnection(conn) {
-            conn.on('open', () => {
-                conn.send({ type: 'auth', pass: roomPass });
-                conn.on('data', (data) => {
-                    if(data.type === 'auth-fail') { alert("Senha incorreta!"); location.reload(); }
-                    if(data.type === 'auth' && data.pass !== roomPass) { conn.send({type: 'auth-fail'}); conn.close(); }
-                    if(data.type === 'chat') appendMessage(data.user, data.msg, "other");
-                    if(data.type === 'file') appendMessage(data.user, data.file, "other", "file");
+        function connectToPeer(id) { const c = peer.connect(id); setupConn(c); }
+
+        function updateStatus(status) {
+            const ball = $('#status-ball');
+            const text = $('#conn-status');
+            if(status === 'online') {
+                ball.className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
+                text.innerText = "Online";
+            } else if(status === 'afk') {
+                ball.className = "w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_#eab308]";
+                text.innerText = "AFK";
+            } else {
+                ball.className = "w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]";
+                text.innerText = "Off-line";
+            }
+        }
+
+        function setupConn(c) {
+            c.on('open', () => {
+                c.send({type:'auth', pass: roomKey, nick: myNick});
+                c.on('data', data => {
+                    if(data.type === 'auth-fail') { alert("Senha Errada!"); location.reload(); }
+                    if(data.type === 'auth') {
+                        if(data.pass !== roomKey) { c.send({type:'auth-fail'}); c.close(); return; }
+                        $('#partner-name').innerText = data.nick;
+                        updateStatus('online');
+                    }
+                    if(data.type === 'status-change') updateStatus(data.status);
+                    if(data.type === 'msg') renderMsg(data.user, data.txt, 'other');
+                    if(data.type === 'file') renderMsg(data.user, data.file, 'other', true);
                 });
-                connections.push(conn);
+                c.on('close', () => { updateStatus('offline'); $('#partner-name').innerText = "Desconectado"; });
+                connections.push(c);
             });
         }
 
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            if (input.value.trim()) {
-                const msg = input.value;
-                connections.forEach(c => c.send({ type: 'chat', user: myNick, msg }));
-                appendMessage("Você", msg, "self");
-                input.value = "";
+        document.addEventListener('visibilitychange', () => {
+            const status = document.hidden ? 'afk' : 'online';
+            if(connections.length > 0) {
+                connections.forEach(c => {
+                    if(c.open) c.send({type: 'status-change', status: status});
+                });
+                updateStatus(status);
             }
+        });
+
+        function send() {
+            const input = $('#msg-input');
+            const txt = input.value.trim();
+            if(!txt) return;
+            connections.forEach(c => c.send({type:'msg', user: myNick, txt}));
+            renderMsg("Você", txt, 'self');
+            input.value = "";
         }
 
-        function sendFile(input) {
+        function handleFile(input) {
             const file = input.files[0];
-            if (!file) return;
-            if (file.size > 5 * 1024 * 1024) return alert("Máximo 5MB!");
-
+            if(!file || file.size > 5242880) return alert("Máx 5MB");
             const reader = new FileReader();
             reader.onload = () => {
-                const fileData = { data: reader.result, name: file.name, type: file.type };
-                connections.forEach(c => c.send({ type: 'file', user: myNick, file: fileData }));
-                appendMessage("Você", fileData, "self", "file");
+                const d = { name: file.name, type: file.type, bin: reader.result };
+                connections.forEach(c => c.send({type:'file', user: myNick, file: d}));
+                renderMsg("Você", d, 'self', true);
             };
             reader.readAsDataURL(file);
         }
 
-        document.getElementById('message-input').onkeypress = (e) => e.key === 'Enter' && sendMessage();
-        document.getElementById('fullscreen-btn').onclick = () => {
-            document.documentElement.requestFullscreen();
-            document.getElementById('fullscreen-btn').style.display = 'none';
-        };
+        function renderMsg(user, content, side, isFile = false) {
+            const div = document.createElement('div');
+            div.className = `animate__animated animate__fadeInUp animate__faster flex flex-col ${side === 'self' ? 'items-end' : 'items-start'}`;
+            let html = `<span class="text-[7px] font-black text-gray-600 px-2 uppercase mb-0.5">${user}</span>`;
+            if(!isFile) {
+                html += `<div class="p-3 rounded-2xl text-[13px] ${side === 'self' ? 'theme-bg text-white rounded-tr-none' : 'bg-white/10 text-gray-200 rounded-tl-none theme-border'} max-w-[90%] shadow-sm leading-tight">${content}</div>`;
+            } else {
+                const isImg = content.type.startsWith('image/');
+                html += `<div class="p-2 rounded-2xl glass-panel theme-border max-w-[80%]">
+                    ${isImg ? `<img src="${content.bin}" class="rounded-lg max-h-40 mb-2">` : `<div class="p-3 italic text-[10px]">📄 ${content.name}</div>`}
+                    <a href="${content.bin}" download="${content.name}" class="block w-full text-center py-2 theme-bg text-white rounded-lg text-[9px] uppercase font-black">Baixar</a>
+                </div>`;
+            }
+            div.innerHTML = html;
+            $('#chat-messages').appendChild(div);
+            $('#chat-messages').scrollTop = $('#chat-messages').scrollHeight;
+        }
+
+        function sysMsg(t) {
+            const d = document.createElement('p');
+            d.className = "text-center text-[8px] text-gray-600 uppercase my-1 font-bold";
+            d.innerText = `-- ${t} --`;
+            $('#chat-messages').appendChild(d);
+        }
+
+        function exitChat() { location.reload(); }
+        $('#fs-btn').onclick = () => { document.documentElement.requestFullscreen(); $('#fs-btn').style.display = 'none'; };
+        $('#msg-input').onkeypress = (e) => e.key === 'Enter' && send();
     </script>
 </body>
 </html>
