@@ -3,79 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat P2P - @085_Teuzinnn</title>
+    <title>Chat P2P - Made By: @085_Teuzinnn</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root { --main: #f97316; --glow: rgba(249, 115, 22, 0.4); }
-        body { background-color: #05070a; color: #f8fafc; overflow: hidden; height: 100vh; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; }
+        body { background: radial-gradient(circle at top, #0f172a 0%, #05070a 100%); color: #f8fafc; overflow: hidden; height: 100vh; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; }
         .theme-border { border: 1px solid var(--main) !important; }
         .theme-text { color: var(--main) !important; }
         .theme-bg { background-color: var(--main) !important; }
-        .theme-shadow { box-shadow: 0 0 20px var(--glow); }
-        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
-        #chat-messages::-webkit-scrollbar { width: 4px; }
+        .theme-shadow { box-shadow: 0 0 30px var(--glow); }
+        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        #chat-messages::-webkit-scrollbar { width: 5px; }
         #chat-messages::-webkit-scrollbar-thumb { background: var(--main); border-radius: 10px; }
-        .message-link { color: #60a5fa; text-decoration: underline; word-break: break-all; }
-        .typing-indicator { font-size: 8px; font-style: italic; color: var(--main); margin-bottom: 4px; display: none; }
-        main { height: calc(100vh - 120px); }
+        .msg-pop { animation: slideIn 0.2s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="p-4">
 
     <div id="lobby-ui" class="w-full max-w-2xl flex flex-col items-center animate__animated animate__fadeIn">
-        <div class="w-full flex justify-end gap-2 mb-4">
-            <button onclick="openSettings()" class="p-2 glass-panel rounded-full hover:scale-110 transition theme-border text-sm">⚙️</button>
-            <button id="fs-btn" class="p-2 glass-panel rounded-full hover:scale-110 transition theme-border text-sm">📺</button>
+        <div class="w-full flex justify-end gap-2 mb-2">
+            <button onclick="openSettings()" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg hover:scale-110 transition-all theme-border text-xs">⚙️</button>
+            <button id="fs-btn" class="w-8 h-8 flex items-center justify-center glass-panel rounded-lg hover:scale-110 transition-all theme-border text-xs">📺</button>
         </div>
 
-        <h1 class="text-4xl font-[900] theme-text uppercase tracking-tighter text-center">Chat P2P</h1>
-        <h2 class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-6 text-center italic">Conexão Segura Direta</h2>
+        <div class="text-center mb-6">
+            <h1 class="text-4xl font-[900] theme-text uppercase tracking-tighter">Chat P2P</h1>
+            <h2 class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Crie ou entre em uma sala para começar</h2>
+        </div>
 
         <div id="lobby-box" class="w-full glass-panel p-6 rounded-[2rem] theme-shadow space-y-4">
-            <div class="space-y-4">
-                <input type="text" id="nick" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 focus:outline-none theme-border transition-all text-sm" placeholder="Seu apelido">
+            <div class="space-y-3">
+                <input type="text" id="nick" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="Seu apelido">
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="room" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 focus:outline-none theme-border transition-all text-sm" placeholder="Nome da Sala">
-                    <input type="password" id="pass" class="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 focus:outline-none theme-border transition-all text-sm" placeholder="Senha da Sala">
+                    <input type="text" id="room" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="Nome da Sala">
+                    <input type="password" id="pass" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 focus:outline-none theme-border transition-all text-sm" placeholder="Senha">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="start(true)" class="theme-bg text-white font-black py-4 rounded-xl active:scale-95 transition shadow-lg shadow-orange-900/20 text-xs uppercase">Criar Sala</button>
-                <button onclick="start(false)" class="bg-transparent theme-text font-black py-4 rounded-xl active:scale-95 transition theme-border text-xs uppercase">Entrar</button>
+                <button onclick="start(true)" class="theme-bg text-white font-black py-4 rounded-xl active:scale-95 transition-all text-xs uppercase tracking-widest">Criar Sala</button>
+                <button onclick="start(false)" class="bg-transparent theme-text font-black py-4 rounded-xl active:scale-95 transition-all theme-border text-xs uppercase tracking-widest">Entrar</button>
             </div>
         </div>
+
+        <footer class="text-center mt-5 text-gray-500 text-sm">
+            Made By: <a href="https://instagram.com/085_Teuzinnn" target="_blank" class="text-blue-400 hover:text-blue-300 font-semibold transition duration-200">@085_Teuzinnn</a>
+        </footer>
     </div>
 
-    <main id="chat-ui" class="hidden w-full max-w-2xl flex-col glass-panel rounded-[2rem] overflow-hidden animate__animated animate__zoomIn theme-shadow h-[80vh]">
-        <div class="p-3 border-b border-white/5 flex justify-between items-center bg-black/30">
+    <main id="chat-ui" class="hidden w-full max-w-3xl flex-col glass-panel rounded-[2rem] overflow-hidden animate__animated animate__zoomIn theme-shadow h-[85vh]">
+        <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40">
             <div class="flex items-center gap-3">
-                <div id="status-ball" class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]"></div>
+                <div id="status-ball" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_red]"></div>
                 <div>
-                    <p id="partner-name" class="text-[10px] font-black uppercase tracking-widest theme-text">Aguardando...</p>
-                    <p id="conn-status" class="text-[8px] text-gray-500 uppercase font-bold tracking-tighter">Desconectado</p>
+                    <p id="partner-name" class="text-[10px] font-black uppercase tracking-wider theme-text">Aguardando...</p>
+                    <p id="conn-status" class="text-[8px] text-gray-500 uppercase font-bold tracking-widest">Desconectado</p>
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="clearMessages()" class="text-[8px] font-bold theme-text px-2 py-1 border border-orange-500/20 rounded-md hover:bg-orange-500/10 transition">LIMPAR</button>
-                <button onclick="exitChat()" class="text-[8px] font-bold text-red-500 px-2 py-1 border border-red-500/20 rounded-md hover:bg-red-500/10 transition text-xs">SAIR</button>
+                <button onclick="clearMessages()" class="text-[8px] font-black theme-text px-2 py-1 border border-orange-500/20 rounded-lg hover:bg-orange-500/10 uppercase">Limpar</button>
+                <button onclick="exitChat()" class="text-[8px] font-black text-red-500 px-2 py-1 border border-red-500/20 rounded-lg hover:bg-red-500/10 uppercase">Sair</button>
             </div>
         </div>
 
         <div id="chat-messages" class="flex-grow p-4 overflow-y-auto flex flex-col gap-3"></div>
-        
-        <div id="typing-ui" class="px-4 typing-indicator">digitando...</div>
+        <div id="typing-ui" class="px-4 text-[10px] theme-text font-bold" style="display:none">...</div>
 
-        <div class="p-3 bg-black/50 border-t border-white/5">
+        <div class="p-3 bg-black/50 border-t border-white/10">
             <div class="flex items-center gap-2">
-                <label class="cursor-pointer active:scale-90 transition">
-                    <div class="w-10 h-10 glass-panel rounded-xl flex items-center justify-center theme-border text-lg">📎</div>
+                <label class="cursor-pointer group">
+                    <div class="w-10 h-10 glass-panel rounded-xl flex items-center justify-center theme-border text-lg group-hover:scale-110 transition-all">📎</div>
                     <input type="file" id="attach" class="hidden" onchange="handleFile(this)">
                 </label>
-                <input type="text" id="msg-input" class="flex-grow bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none theme-border transition-all text-xs" placeholder="Escreva uma mensagem...">
-                <button onclick="sendMsg()" class="w-10 h-10 theme-bg rounded-xl flex items-center justify-center active:scale-90 transition theme-border">
+                <input type="text" id="msg-input" class="flex-grow bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none theme-border transition-all text-xs" placeholder="Escreva algo...">
+                <button onclick="sendMsg()" class="w-10 h-10 theme-bg rounded-xl flex items-center justify-center active:scale-90 transition-all theme-border">
                     <svg viewBox="0 0 24 24" class="w-4 h-4 fill-white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
                 </button>
             </div>
@@ -83,28 +88,33 @@
     </main>
 
     <div id="modal" class="fixed inset-0 bg-black/95 hidden z-50 flex items-center justify-center p-6 animate__animated animate__fadeIn">
-        <div class="glass-panel w-full max-w-xs rounded-[2rem] p-6 space-y-6 theme-border">
-            <h3 class="font-black text-center theme-text tracking-widest text-sm uppercase">Personalização</h3>
-            <div class="space-y-5">
-                <div class="flex justify-between p-1">
-                    <button onclick="setTheme('#f97316')" class="w-9 h-9 rounded-full bg-orange-500 border-2 border-white/20"></button>
-                    <button onclick="setTheme('#22c55e')" class="w-9 h-9 rounded-full bg-green-500 border-2 border-white/20"></button>
-                    <button onclick="setTheme('#3b82f6')" class="w-9 h-9 rounded-full bg-blue-500 border-2 border-white/20"></button>
-                    <button onclick="setTheme('#a855f7')" class="w-9 h-9 rounded-full bg-purple-500 border-2 border-white/20"></button>
-                </div>
-                <button onclick="clearAllData()" class="w-full py-3 bg-red-900/10 text-red-500 border border-red-900/30 rounded-xl font-bold text-[10px] active:scale-95 transition">RESETA DADOS LOCAIS</button>
-                <button onclick="closeSettings()" class="w-full py-2.5 bg-white/5 rounded-xl text-[10px] font-black active:scale-95 transition uppercase">Voltar ao Chat</button>
+        <div class="glass-panel w-full max-w-xs rounded-[2rem] p-6 space-y-5 theme-border">
+            <h3 class="font-black text-center theme-text tracking-widest text-[11px] uppercase">Personalizar Tema</h3>
+            <div class="grid grid-cols-5 gap-3 justify-items-center">
+                <button onclick="setTheme('#f97316')" class="w-9 h-9 rounded-xl bg-orange-500 border border-white/10"></button>
+                <button onclick="setTheme('#22c55e')" class="w-9 h-9 rounded-xl bg-green-500 border border-white/10"></button>
+                <button onclick="setTheme('#3b82f6')" class="w-9 h-9 rounded-xl bg-blue-500 border border-white/10"></button>
+                <button onclick="setTheme('#06b6d4')" class="w-9 h-9 rounded-xl bg-cyan-500 border border-white/10"></button>
+                <button onclick="setTheme('#ef4444')" class="w-9 h-9 rounded-xl bg-red-500 border border-white/10"></button>
+                <button onclick="setTheme('#ec4899')" class="w-9 h-9 rounded-xl bg-pink-500 border border-white/10"></button>
+                <button onclick="setTheme('#a855f7')" class="w-9 h-9 rounded-xl bg-purple-500 border border-white/10"></button>
+                <button onclick="setTheme('#eab308')" class="w-9 h-9 rounded-xl bg-yellow-500 border border-white/10"></button>
+                <button onclick="setTheme('#14b8a6')" class="w-9 h-9 rounded-xl bg-teal-500 border border-white/10"></button>
+                <button onclick="setTheme('#f43f5e')" class="w-9 h-9 rounded-xl bg-rose-500 border border-white/10"></button>
+            </div>
+            <div class="space-y-2 pt-2">
+                <button onclick="clearAllData()" class="w-full py-3 bg-red-900/10 text-red-500 border border-red-900/30 rounded-xl font-bold text-[9px] uppercase">Resetar Dados</button>
+                <button onclick="closeSettings()" class="w-full py-3 bg-white/5 rounded-xl text-[9px] font-black uppercase">Voltar</button>
             </div>
         </div>
     </div>
 
-    <footer class="text-center mt-auto py-4 text-gray-500 text-[10px] tracking-widest uppercase">Made By:<a href="https://instagram.com/085_Teuzinnn" target="_blank" class="theme-text font-bold">@085_Teuzinnn</a>
-    </footer>
+    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
 
     <script>
         let peer = null, connections = [], myNick = "", roomKey = "";
-        let typingTimeout;
         const $ = document.querySelector.bind(document);
+        const notifySound = $('#notif-sound');
 
         window.onload = () => {
             $('#nick').value = localStorage.getItem('tp_nick') || '';
@@ -120,26 +130,28 @@
             localStorage.setItem('tp_color', c);
         }
 
+        const encrypt = (txt) => CryptoJS.AES.encrypt(txt, roomKey).toString();
+        const decrypt = (hash) => {
+            try { return CryptoJS.AES.decrypt(hash, roomKey).toString(CryptoJS.enc.Utf8); }
+            catch(e) { return "Erro"; }
+        };
+
         function start(isHost) {
             myNick = $('#nick').value.trim();
-            const r = $('#room').value.trim().toLowerCase();
+            const r = $('#room').value.trim().toLowerCase().replace(/\s+/g, '-');
             roomKey = $('#pass').value.trim();
-            if(!myNick || !r || !roomKey) return alert("Preencha todos os campos!");
+            if(!myNick || !r || !roomKey) return;
             localStorage.setItem('tp_nick', myNick);
             localStorage.setItem('tp_room', r);
             localStorage.setItem('tp_pass', roomKey);
-            peer = new Peer(isHost ? r : undefined, { debug: 1 });
-            peer.on('open', (id) => {
+            peer = new Peer(isHost ? `room-${r}` : undefined, { debug: 1 });
+            peer.on('open', () => {
                 $('#lobby-ui').classList.add('hidden');
                 $('#chat-ui').classList.replace('hidden', 'flex');
-                if(!isHost) connectToPeer(r);
-                sysMsg("Sistema", "Aguardando conexão direta...");
+                if(!isHost) connectToPeer(`room-${r}`);
+                sysMsg("INFO", "Conectando ao servidor...");
             });
             peer.on('connection', setupConn);
-            peer.on('error', (err) => {
-                alert("Erro: " + err.type);
-                location.reload();
-            });
         }
 
         function connectToPeer(id) {
@@ -149,89 +161,53 @@
 
         function setupConn(c) {
             c.on('open', () => {
-                c.send({type:'auth', pass: roomKey, nick: myNick});
+                c.send({type:'auth', pass: encrypt('valid'), nick: myNick});
                 c.on('data', data => {
-                    if(data.type === 'auth-fail') { alert("Senha incorreta!"); location.reload(); }
+                    if(data.type === 'auth-fail') { sysMsg("ERRO", "Senha incorreta."); setTimeout(() => location.reload(), 2000); }
                     if(data.type === 'auth') {
-                        if(data.pass !== roomKey) { c.send({type:'auth-fail'}); c.close(); return; }
+                        if(decrypt(data.pass) !== 'valid') { c.send({type:'auth-fail'}); c.close(); return; }
                         $('#partner-name').innerText = data.nick;
                         updateStatusUI('online');
-                        sysMsg("Sistema", `${data.nick} entrou no chat.`);
+                        sysMsg("SISTEMA", `${data.nick} entrou.`);
+                        notifySound.play();
                     }
                     if(data.type === 'status') updateStatusUI(data.val);
-                    if(data.type === 'msg') renderMsg(data.user, data.txt, 'other');
+                    if(data.type === 'msg') renderMsg(data.user, decrypt(data.txt), 'other');
                     if(data.type === 'file') renderMsg(data.user, data.file, 'other', true);
-                    if(data.type === 'typing') toggleTypingUI(true);
+                    if(data.type === 'typing') toggleTypingUI(true, data.user);
                 });
                 c.on('close', () => {
                     updateStatusUI('offline');
-                    sysMsg("Sistema", "O par se desconectou.");
+                    sysMsg("SISTEMA", "O parceiro saiu.");
+                    connections = connections.filter(conn => conn !== c);
                 });
                 connections.push(c);
             });
         }
 
+        function canSend() {
+            if(connections.length === 0) {
+                sysMsg("AVISO", "Aguarde alguém entrar na sala.");
+                return false;
+            }
+            return true;
+        }
+
         function sendMsg() {
+            if(!canSend()) return;
             const input = $('#msg-input');
             const txt = input.value.trim();
-            if(!txt || connections.length === 0) return;
-            connections.forEach(c => c.send({type:'msg', user: myNick, txt}));
+            if(!txt) return;
+            const encrypted = encrypt(txt);
+            connections.forEach(c => c.send({type:'msg', user: myNick, txt: encrypted}));
             renderMsg("Você", txt, 'self');
             input.value = "";
         }
 
-        function renderMsg(user, content, side, isFile = false) {
-            const container = $('#chat-messages');
-            const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col mb-2 animate__animated animate__fadeInUp animate__faster ${side === 'self' ? 'items-end' : 'items-start'}`;
-            const label = document.createElement('span');
-            label.className = "text-[7px] font-black text-gray-500 px-2 uppercase mb-1";
-            label.textContent = user;
-            const bubble = document.createElement('div');
-            bubble.className = `p-3 rounded-2xl text-[13px] max-w-[85%] shadow-sm leading-tight ${side === 'self' ? 'theme-bg text-white rounded-tr-none' : 'bg-white/10 text-gray-200 rounded-tl-none theme-border'}`;
-            if(isFile) {
-                renderFileBubble(bubble, content);
-            } else {
-                bubble.innerHTML = linkify(content);
-            }
-            wrapper.appendChild(label);
-            wrapper.appendChild(bubble);
-            container.appendChild(wrapper);
-            container.scrollTop = container.scrollHeight;
-            toggleTypingUI(false);
-        }
-
-        function linkify(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            const safeText = div.innerHTML;
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return safeText.replace(urlRegex, (url) => {
-                return `<a href="${url}" target="_blank" class="message-link">${url}</a>`;
-            });
-        }
-
-        function renderFileBubble(el, file) {
-            const isImg = file.type.startsWith('image/');
-            if(isImg) {
-                const img = document.createElement('img');
-                img.src = file.bin;
-                img.className = "rounded-lg max-h-60 mb-2 cursor-pointer";
-                img.onclick = () => window.open(file.bin);
-                el.appendChild(img);
-            }
-            const btn = document.createElement('a');
-            btn.href = file.bin;
-            btn.download = file.name;
-            btn.className = "block text-center py-2 bg-black/20 hover:bg-black/40 rounded-lg text-[9px] font-black uppercase transition";
-            btn.innerText = `⬇ Baixar ${file.name} (${(file.size/1024).toFixed(1)}KB)`;
-            el.appendChild(btn);
-        }
-
         function handleFile(input) {
+            if(!canSend()) { input.value = ""; return; }
             const file = input.files[0];
             if(!file) return;
-            if(file.size > 15 * 1024 * 1024) return alert("Limite de 15MB excedido.");
             const reader = new FileReader();
             reader.onload = () => {
                 const fileData = { name: file.name, type: file.type, size: file.size, bin: reader.result };
@@ -241,51 +217,85 @@
             reader.readAsDataURL(file);
         }
 
+        function renderMsg(user, content, side, isFile = false) {
+            const container = $('#chat-messages');
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex flex-col mb-3 msg-pop ${side === 'self' ? 'items-end' : 'items-start'}`;
+            const bubble = document.createElement('div');
+            bubble.className = `p-3 rounded-2xl text-xs max-w-[85%] ${side === 'self' ? 'theme-bg text-white rounded-tr-none' : 'bg-white/10 text-gray-200 rounded-tl-none theme-border'}`;
+            
+            if(isFile) {
+                if(content.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = content.bin;
+                    img.className = "rounded-lg max-h-48 mb-2";
+                    bubble.appendChild(img);
+                } else {
+                    const info = document.createElement('div');
+                    info.className = "flex items-center gap-2 mb-2 bg-black/20 p-2 rounded-lg border border-white/5";
+                    info.innerHTML = `<span class='text-[10px]'>📄</span> <span class='truncate max-w-[120px] font-bold'>${content.name}</span>`;
+                    bubble.appendChild(info);
+                }
+                const btn = document.createElement('a');
+                btn.href = content.bin;
+                btn.download = content.name;
+                btn.className = "block text-center text-[10px] font-black underline uppercase bg-white/5 py-1 rounded";
+                btn.innerText = "Baixar";
+                bubble.appendChild(btn);
+            } else {
+                bubble.innerText = content;
+            }
+            wrapper.appendChild(bubble);
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
         function updateStatusUI(status) {
             const ball = $('#status-ball');
             const text = $('#conn-status');
             if(status === 'online') {
-                ball.className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
-                text.innerText = "Conectado";
+                text.innerText = "Online";
+                ball.style.backgroundColor = "#22c55e";
+                ball.style.boxShadow = "0 0 8px #22c55e";
             } else if(status === 'afk') {
-                ball.className = "w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_#eab308]";
-                text.innerText = "Ausente";
+                text.innerText = "Ausente (AFK)";
+                ball.style.backgroundColor = "#eab308";
+                ball.style.boxShadow = "0 0 8px #eab308";
             } else {
-                ball.className = "w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]";
                 text.innerText = "Off-line";
+                ball.style.backgroundColor = "#ef4444";
+                ball.style.boxShadow = "0 0 8px #ef4444";
+                $('#partner-name').innerText = "Aguardando...";
             }
         }
 
-        function toggleTypingUI(show) {
+        function toggleTypingUI(show, user = "") {
             const ui = $('#typing-ui');
+            ui.innerText = `${user} digitando...`;
             ui.style.display = show ? 'block' : 'none';
             if(show) setTimeout(() => ui.style.display = 'none', 3000);
         }
 
         function sysMsg(user, txt) {
             const d = document.createElement('p');
-            d.className = "text-center text-[8px] text-gray-600 uppercase my-2 font-bold tracking-widest";
+            d.className = "text-center text-[8px] text-gray-500 uppercase my-2 tracking-tighter font-bold";
             d.innerText = `// ${txt} //`;
             $('#chat-messages').appendChild(d);
+            const container = $('#chat-messages');
+            container.scrollTop = container.scrollHeight;
         }
-
-        $('#msg-input').oninput = () => {
-            clearTimeout(typingTimeout);
-            connections.forEach(c => c.send({type: 'typing'}));
-            typingTimeout = setTimeout(() => {}, 2000);
-        };
 
         document.addEventListener('visibilitychange', () => {
             const status = document.hidden ? 'afk' : 'online';
-            connections.forEach(c => c.send({type: 'status', val: status}));
-            updateStatusUI(status);
+            if(connections.length > 0) connections.forEach(c => c.send({type: 'status', val: status}));
         });
 
+        $('#msg-input').oninput = () => { if(connections.length > 0) connections.forEach(c => c.send({type: 'typing', user: myNick})); };
         $('#msg-input').onkeypress = (e) => e.key === 'Enter' && sendMsg();
         function openSettings() { $('#modal').classList.remove('hidden'); }
         function closeSettings() { $('#modal').classList.add('hidden'); }
         function clearMessages() { $('#chat-messages').innerHTML = ""; }
-        function exitChat() { if(confirm("Sair do chat?")) location.reload(); }
+        function exitChat() { location.reload(); }
         function clearAllData() { localStorage.clear(); location.reload(); }
         $('#fs-btn').onclick = () => { 
             if (!document.fullscreenElement) document.documentElement.requestFullscreen();
